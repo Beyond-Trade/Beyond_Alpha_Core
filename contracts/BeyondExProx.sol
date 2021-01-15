@@ -102,6 +102,7 @@ contract beyondExProx is Ownable{
     function startExchangeProx() external onlyContract{
         start = true;
         rewardContract.initialize();
+        getBeyondTokenValue();
     }
 
     function mintUSDSynth(uint256 _value, address _minter) onlyContract external {
@@ -153,6 +154,8 @@ contract beyondExProx is Ownable{
         usdSynthToken.burn(_value,_address);
         
         synthToken.mint(SynthToMint,_address);
+
+        getBeyondTokenValue();
         
     }
    
@@ -183,6 +186,8 @@ contract beyondExProx is Ownable{
         __synth2Amount = (__synth2Amount.mul(1 ether)).div(__synth2Rate);
         
         synthToken.mint(__synth2Amount,_beneficiary);
+
+        getBeyondTokenValue();
         
     }
     
@@ -208,6 +213,8 @@ contract beyondExProx is Ownable{
         synthToken.burn(_value,_beneficiary);
         
         usdSynthToken.mint(__synth1AmountToUsd,_beneficiary);
+
+        getBeyondTokenValue();
         
     }
     
@@ -244,6 +251,7 @@ contract beyondExProx is Ownable{
         
         //return collatteralRatioUpdated;
         
+        
     }
 
     function checkUserCollatteral(address _beneficiary) public view returns (uint256 bUSDAmountInBYN, uint256 collatteralValueInBYN, uint256 additionalBYNValueForCollateral, uint256 additionalCollatteralValueInUSDb, uint256 collatteralRatioUpdated){
@@ -279,7 +287,7 @@ contract beyondExProx is Ownable{
         
         (, , , , collatteralRatioUpdated) = checkUserCollatteral(_beneficiary);
         
-        uint256 amountInBYN = (_value.mul(1 ether)).div(getBeyondTokenValue());
+        uint256 amountInBYN = (_value.mul(1 ether)).div(beyondTokenValueInDollar);
         uint256 collatteralValueInBYN = (amountInBYN.mul((collatteralRatio.mul(1 ether)).div(100))).div(1 ether);
         
         require (collatteralRatioUpdated >= collatteral[_beneficiary].currentCollatteralRatio,"settle your collatterla ratio first");
@@ -295,6 +303,9 @@ contract beyondExProx is Ownable{
         collatteral[_beneficiary].bUSDValue = collatteral[_beneficiary].bUSDValue.sub(_value);
         collatteral[_beneficiary].USDbValueinBYN = collatteral[_beneficiary].USDbValueinBYN.sub(amountInBYN);
         collatteral[_beneficiary].collatteralValue = collatteral[_beneficiary].collatteralValue.sub(collatteralValueInBYN);
+
+        totalMintedUSDb = totalMintedUSDb.sub(_value);
+        totalStackedBYN = totalStackedBYN.sub(collatteralValueInBYN);
         
         if (collatteral[_beneficiary].bUSDValue == 0 && collatteral[_beneficiary].collatteralValue > 0){
             
@@ -307,9 +318,6 @@ contract beyondExProx is Ownable{
         if (collatteral[_beneficiary].bUSDValue == 0){
             collatteral[_beneficiary].currentCollatteralRatio = collatteral[_beneficiary].currentCollatteralRatio.sub(collatteral[_beneficiary].currentCollatteralRatio);
         }
-    
-        totalMintedUSDb = totalMintedUSDb.sub(collatteral[_beneficiary].bUSDValue);
-        totalStackedBYN = totalStackedBYN.sub(collatteral[_beneficiary].collatteralValue);
         
         //return collatteralRatioUpdated;
     }
@@ -337,6 +345,8 @@ contract beyondExProx is Ownable{
         // }
         collatteral[_beneficiary].totalReward = collatteral[_beneficiary].totalReward.add(reward);
         collatteral[_beneficiary].rewardClaimTime = _rewardClaimTime;
+
+        getBeyondTokenValue();
     }
     
     function claimReward(address _beneficiary) onlyContract external{
@@ -349,6 +359,7 @@ contract beyondExProx is Ownable{
         
         collatteral[_beneficiary].totalReward = collatteral[_beneficiary].totalReward.sub(collatteral[_beneficiary].totalReward);
         
+        getBeyondTokenValue();
     }
     
     function userRewardDetails(address _beneficiary, uint256 _time) external view returns(uint256 reward, uint256 collectableReward, uint256 earlyRedemptionFee, uint256 investTime){
